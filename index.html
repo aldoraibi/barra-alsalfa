@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>برا السالفة</title>
+<style>
+  :root{
+    --bg1:#1b1033;
+    --bg2:#3a1c5c;
+    --accent:#ff6b6b;
+    --accent2:#ffd93d;
+    --card:#241442;
+    --card2:#2f1c56;
+    --text:#f5f1ff;
+    --muted:#b9a9e0;
+    --green:#4ecb71;
+    --red:#ff5c5c;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    font-family:"Tahoma","Segoe UI",Arial,sans-serif;
+    background:radial-gradient(circle at 50% 0%, var(--bg2), var(--bg1) 70%);
+    color:var(--text);
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  #app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    padding:18px 16px 40px;
+    display:flex;
+    flex-direction:column;
+  }
+  h1.title{
+    text-align:center;
+    font-size:30px;
+    margin:6px 0 2px;
+    letter-spacing:1px;
+  }
+  h1.title span{color:var(--accent2);}
+  .subtitle{
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:18px;
+  }
+  .screen{display:none;flex-direction:column;gap:16px;flex:1;}
+  .screen.active{display:flex;}
+
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:16px;
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+    border:1px solid rgba(255,255,255,.06);
+  }
+  .card h2{margin:0 0 10px;font-size:17px;display:flex;align-items:center;gap:8px;}
+  .row{display:flex;gap:8px;}
+  input[type=text], input[type=number]{
+    flex:1;
+    background:var(--card2);
+    border:1px solid rgba(255,255,255,.12);
+    color:var(--text);
+    border-radius:12px;
+    padding:11px 12px;
+    font-size:15px;
+    outline:none;
+  }
+  input[type=text]:focus, input[type=number]:focus{border-color:var(--accent2);}
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    border:none;
+    border-radius:12px;
+    padding:11px 16px;
+    font-size:15px;
+    font-weight:bold;
+    transition:transform .08s ease;
+  }
+  button:active{transform:scale(.96);}
+  .btn-add{background:var(--accent2);color:#2b1a00;}
+  .btn-primary{
+    background:linear-gradient(135deg,var(--accent),#ff9068);
+    color:#2b0d00;
+    font-size:17px;
+    padding:14px;
+    width:100%;
+    border-radius:14px;
+  }
+  .btn-primary:disabled{opacity:.4;}
+  .btn-secondary{background:var(--card2);color:var(--text);border:1px solid rgba(255,255,255,.15);}
+  .btn-ghost{background:transparent;color:var(--muted);text-decoration:underline;padding:6px;font-size:13px;}
+  .btn-danger{background:var(--red);color:#3a0000;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  .chip{
+    background:var(--card2);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:999px;
+    padding:7px 8px 7px 14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+  }
+  .chip .x{
+    background:rgba(255,92,92,.18);
+    color:var(--red);
+    width:20px;height:20px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .count{color:var(--muted);font-size:12px;margin-inline-start:6px;}
+
+  .cat-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    cursor:pointer;
+    padding:12px 4px;
+  }
+  .cat-header .left{display:flex;align-items:center;gap:10px;}
+  .cat-header .name{font-weight:bold;font-size:15px;}
+  .cat-header .meta{color:var(--muted);font-size:12px;}
+  .switch{
+    width:42px;height:24px;border-radius:999px;
+    background:rgba(255,255,255,.15);
+    position:relative;flex-shrink:0;
+  }
+  .switch.on{background:var(--green);}
+  .switch .dot{
+    position:absolute;top:3px;right:3px;
+    width:18px;height:18px;border-radius:50%;background:#fff;
+    transition:right .15s ease;
+  }
+  .switch.on .dot{right:21px;}
+  .chevron{color:var(--muted);transition:transform .15s ease;font-size:13px;}
+  .chevron.open{transform:rotate(180deg);}
+  .cat-body{display:none;padding:0 4px 12px;}
+  .cat-body.open{display:block;}
+  .cat-sep{border-top:1px solid rgba(255,255,255,.08);}
+
+  .settings-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 2px;
+  }
+  .settings-row .lbl{font-size:14px;}
+  .settings-row .lbl small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;}
+  .stepper{display:flex;align-items:center;gap:10px;}
+  .stepper button{
+    width:34px;height:34px;padding:0;border-radius:50%;
+    background:var(--card2);color:var(--text);font-size:18px;
+  }
+  .stepper .val{min-width:22px;text-align:center;font-weight:bold;}
+
+  .warn{color:var(--accent2);font-size:13px;text-align:center;min-height:18px;}
+
+  /* reveal screen */
+  .pass-box{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;gap:22px;
+  }
+  .avatar-circle{
+    width:110px;height:110px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;
+    font-size:44px;
+  }
+  .player-name-big{font-size:26px;font-weight:bold;}
+  .hint{color:var(--muted);font-size:14px;}
+  .reveal-card{
+    background:var(--card);
+    border-radius:22px;
+    padding:32px 22px;
+    text-align:center;
+    border:2px solid rgba(255,255,255,.08);
+  }
+  .reveal-card.spy{border-color:var(--red);}
+  .reveal-card.normal{border-color:var(--green);}
+  .role-tag{
+    display:inline-block;
+    font-size:13px;
+    padding:4px 12px;
+    border-radius:999px;
+    margin-bottom:14px;
+    font-weight:bold;
+  }
+  .role-tag.spy{background:rgba(255,92,92,.18);color:var(--red);}
+  .role-tag.normal{background:rgba(78,203,113,.18);color:var(--green);}
+  .secret-word{font-size:30px;font-weight:bold;margin:4px 0 6px;}
+  .cat-name{color:var(--muted);font-size:14px;}
+  .spy-msg{font-size:17px;line-height:1.7;}
+
+  .progress-dots{display:flex;justify-content:center;gap:6px;margin-top:6px;}
+  .dot-pip{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.2);}
+  .dot-pip.done{background:var(--accent2);}
+
+  /* discuss */
+  .timer-display{
+    font-size:56px;font-weight:bold;text-align:center;
+    letter-spacing:2px;
+    font-variant-numeric:tabular-nums;
+  }
+  .timer-display.low{color:var(--red);}
+
+  /* result */
+  .result-hero{
+    text-align:center;padding:10px 0 4px;
+  }
+  .result-hero .emoji{font-size:52px;}
+  .outsider-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px;}
+  .outsider-chip{
+    background:rgba(255,92,92,.15);color:var(--red);
+    border:1px solid rgba(255,92,92,.4);
+    border-radius:999px;padding:7px 16px;font-weight:bold;font-size:14px;
+  }
+
+  footer.nav{
+    display:flex;gap:10px;margin-top:6px;
+  }
+  .grow{flex:1;}
+  .small-note{font-size:12px;color:var(--muted);text-align:center;}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1 class="title">🕵️ برا <span>السالفة</span></h1>
+  <div class="subtitle">لعبة اكتشاف الشخص اللي برا السالفة</div>
+
+  <!-- ============ SETUP SCREEN ============ -->
+  <div class="screen active" id="screen-setup">
+
+    <div class="card" id="players-card">
+      <h2>👥 اللاعبين <span class="count" id="players-count">(0/20)</span></h2>
+      <div class="row">
+        <input type="text" id="player-input" placeholder="اكتب اسم اللاعب واضغط إضافة" maxlength="20">
+        <button class="btn-add" id="add-player-btn">إضافة</button>
+      </div>
+      <div class="chips" id="players-chips"></div>
+    </div>
+
+    <div class="card" id="categories-card">
+      <h2>🗂️ الأقسام</h2>
+      <div id="categories-list"></div>
+      <button class="btn-ghost" id="add-category-btn">+ إضافة قسم جديد</button>
+    </div>
+
+    <div class="card">
+      <h2>⚙️ إعدادات الجولة</h2>
+      <div class="settings-row">
+        <div class="lbl">عدد اللي برا السالفة<small>يفضل شخص واحد إذا اللاعبين أقل من 7</small></div>
+        <div class="stepper">
+          <button id="outsider-minus">−</button>
+          <span class="val" id="outsider-val">1</span>
+          <button id="outsider-plus">+</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="lbl">إظهار اسم القسم للي برا السالفة<small>يساعده يتظاهر إنه يعرف</small></div>
+        <div class="switch on" id="toggle-showcat"><div class="dot"></div></div>
+      </div>
+      <div class="settings-row">
+        <div class="lbl">مؤقت النقاش<small>عد تنازلي بعد ما يخلص الكل الكشف</small></div>
+        <div class="switch on" id="toggle-timer"><div class="dot"></div></div>
+      </div>
+      <div class="settings-row" id="timer-minutes-row">
+        <div class="lbl">مدة النقاش (دقائق)</div>
+        <div class="stepper">
+          <button id="timer-minus">−</button>
+          <span class="val" id="timer-val">3</span>
+          <button id="timer-plus">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="warn" id="setup-warning"></div>
+    <button class="btn-primary" id="start-btn">ابدأ الجولة 🎬</button>
+    <div class="small-note">مرروا نفس الجهاز بين اللاعبين وقت الكشف</div>
+  </div>
+
+  <!-- ============ REVEAL SCREEN ============ -->
+  <div class="screen" id="screen-reveal">
+    <div class="progress-dots" id="reveal-dots"></div>
+    <div class="pass-box" id="pass-box">
+      <div class="avatar-circle" id="pass-avatar">📱</div>
+      <div>
+        <div class="hint">مرر الجهاز إلى</div>
+        <div class="player-name-big" id="pass-name"></div>
+      </div>
+      <button class="btn-primary" id="reveal-btn" style="max-width:260px">اضغط للكشف عن دوري 👁️</button>
+    </div>
+
+    <div class="reveal-card" id="reveal-card" style="display:none">
+      <div id="reveal-inner"></div>
+    </div>
+    <button class="btn-secondary" id="next-player-btn" style="display:none">أخفِ وسلّم الجهاز للي بعدي ⬅️</button>
+  </div>
+
+  <!-- ============ DISCUSS SCREEN ============ -->
+  <div class="screen" id="screen-discuss">
+    <div class="card" style="text-align:center">
+      <h2 style="justify-content:center">🗣️ وقت النقاش</h2>
+      <p class="hint">كل واحد خذ دوره. الحين ابدأوا تسألوا بعض عشان تكتشفوا مين اللي برا السالفة</p>
+    </div>
+    <div class="card" id="timer-card">
+      <div class="timer-display" id="timer-display">03:00</div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn-secondary grow" id="timer-toggle-btn">ابدأ ⏱️</button>
+        <button class="btn-secondary grow" id="timer-reset-btn">إعادة تعيين</button>
+      </div>
+    </div>
+    <button class="btn-primary" id="show-result-btn">اكشفوا النتيجة الآن 🔎</button>
+  </div>
+
+  <!-- ============ RESULT SCREEN ============ -->
+  <div class="screen" id="screen-result">
+    <div class="card result-hero">
+      <div class="emoji">🎉</div>
+      <div class="cat-name" id="result-cat"></div>
+      <div class="secret-word" id="result-word"></div>
+      <div class="hint" style="margin-top:6px">اللي كانوا برا السالفة</div>
+      <div class="outsider-list" id="result-outsiders"></div>
+    </div>
+    <button class="btn-primary" id="new-round-btn">جولة جديدة بنفس اللاعبين 🔁</button>
+    <button class="btn-secondary" id="back-setup-btn">تعديل اللاعبين / الأقسام</button>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "barra_alsalfa_state_v1";
+
+  var DEFAULT_CATEGORIES = [
+    { id:"chars", name:"شخصيات عامة", active:true, items:[
+      "ليونيل ميسي","كريستيانو رونالدو","محمد صلاح","أم كلثوم","فيروز",
+      "مايكل جاكسون","ألبرت أينشتاين","ليوناردو دافنشي","نجيب محفوظ",
+      "صلاح الدين الأيوبي","ابن سينا","والت ديزني","توت عنخ آمون","تشارلي شابلن"
+    ]},
+    { id:"animals", name:"حيوانات", active:true, items:[
+      "أسد","نمر","فيل","زرافة","قرد","ثعلب","دب","حصان","جمل",
+      "بطريق","دولفين","تمساح","نسر","حمامة","أرنب","سلحفاة"
+    ]},
+    { id:"food", name:"أكلات", active:true, items:[
+      "كبسة","مندي","برجر","بيتزا","شاورما","سوشي","مقلوبة","فلافل",
+      "حمص","كنافة","بقلاوة","مسخن","مظبي","صيادية","تاكو"
+    ]},
+    { id:"countries", name:"دول", active:true, items:[
+      "السعودية","مصر","الإمارات","المغرب","تركيا","اليابان","فرنسا",
+      "البرازيل","إسبانيا","إيطاليا","ألمانيا","الهند","كندا","أستراليا"
+    ]}
+  ];
+
+  var DEFAULT_PLAYERS = [];
+
+  var state = {
+    players: DEFAULT_PLAYERS.slice(),
+    categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
+    outsiderCount: 1,
+    showCatToOutsider: true,
+    timerEnabled: true,
+    timerMinutes: 3,
+    openCategoryId: null
+  };
+
+  var round = null;      // { word, categoryName, outsiderIdx: Set, order: [] }
+  var revealPos = 0;
+  var revealed = false;
+  var timerInterval = null;
+  var timerSeconds = 0;
+  var timerRunning = false;
+
+  function save(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        players: state.players,
+        categories: state.categories,
+        outsiderCount: state.outsiderCount,
+        showCatToOutsider: state.showCatToOutsider,
+        timerEnabled: state.timerEnabled,
+        timerMinutes: state.timerMinutes
+      }));
+    }catch(e){}
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      var saved = JSON.parse(raw);
+      if(saved.players) state.players = saved.players;
+      if(saved.categories && saved.categories.length) state.categories = saved.categories;
+      if(typeof saved.outsiderCount === "number") state.outsiderCount = saved.outsiderCount;
+      if(typeof saved.showCatToOutsider === "boolean") state.showCatToOutsider = saved.showCatToOutsider;
+      if(typeof saved.timerEnabled === "boolean") state.timerEnabled = saved.timerEnabled;
+      if(typeof saved.timerMinutes === "number") state.timerMinutes = saved.timerMinutes;
+    }catch(e){}
+  }
+
+  function $(id){ return document.getElementById(id); }
+  function showScreen(id){
+    document.querySelectorAll(".screen").forEach(function(s){ s.classList.remove("active"); });
+    $(id).classList.add("active");
+  }
+
+  function esc(str){
+    var d = document.createElement("div");
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // ---------- PLAYERS ----------
+  function renderPlayers(){
+    $("players-count").textContent = "(" + state.players.length + "/20)";
+    var wrap = $("players-chips");
+    wrap.innerHTML = "";
+    state.players.forEach(function(name, i){
+      var chip = document.createElement("div");
+      chip.className = "chip";
+      chip.innerHTML = '<span>' + esc(name) + '</span><span class="x" data-i="'+i+'">✕</span>';
+      wrap.appendChild(chip);
+    });
+    wrap.querySelectorAll(".x").forEach(function(x){
+      x.addEventListener("click", function(){
+        state.players.splice(parseInt(x.getAttribute("data-i"),10), 1);
+        renderPlayers(); validateSetup(); save();
+      });
+    });
+    $("add-player-btn").disabled = state.players.length >= 20;
+  }
+
+  function addPlayer(){
+    var input = $("player-input");
+    var name = input.value.trim();
+    if(!name) return;
+    if(state.players.length >= 20) return;
+    if(state.players.indexOf(name) !== -1){ input.value=""; return; }
+    state.players.push(name);
+    input.value = "";
+    renderPlayers(); validateSetup(); save();
+    input.focus();
+  }
+
+  // ---------- CATEGORIES ----------
+  function renderCategories(){
+    var wrap = $("categories-list");
+    wrap.innerHTML = "";
+    state.categories.forEach(function(cat, ci){
+      var block = document.createElement("div");
+      var isOpen = state.openCategoryId === cat.id;
+      block.className = "cat-sep";
+      block.innerHTML =
+        '<div class="cat-header" data-id="'+cat.id+'">' +
+          '<div class="left">' +
+            '<div class="switch '+(cat.active?'on':'')+'" data-toggle="'+cat.id+'"><div class="dot"></div></div>' +
+            '<div>' +
+              '<div class="name">'+esc(cat.name)+'</div>' +
+              '<div class="meta">'+cat.items.length+' عنصر</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="chevron '+(isOpen?'open':'')+'">▾</div>' +
+        '</div>' +
+        '<div class="cat-body '+(isOpen?'open':'')+'" data-body="'+cat.id+'">' +
+          '<div class="row">' +
+            '<input type="text" placeholder="أضف عنصر جديد" data-add-input="'+cat.id+'" maxlength="24">' +
+            '<button class="btn-add" data-add-btn="'+cat.id+'">إضافة</button>' +
+          '</div>' +
+          '<div class="chips" data-items="'+cat.id+'"></div>' +
+          '<button class="btn-ghost" data-del-cat="'+cat.id+'">حذف القسم بالكامل</button>' +
+        '</div>';
+      wrap.appendChild(block);
+
+      var itemsWrap = block.querySelector('[data-items="'+cat.id+'"]');
+      cat.items.forEach(function(item, ii){
+        var chip = document.createElement("div");
+        chip.className = "chip";
+        chip.innerHTML = '<span>'+esc(item)+'</span><span class="x" data-cat="'+cat.id+'" data-idx="'+ii+'">✕</span>';
+        itemsWrap.appendChild(chip);
+      });
+    });
+
+    // header click -> toggle open
+    wrap.querySelectorAll(".cat-header").forEach(function(h){
+      h.addEventListener("click", function(){
+        var id = h.getAttribute("data-id");
+        state.openCategoryId = (state.openCategoryId === id) ? null : id;
+        renderCategories();
+      });
+    });
+    // active switch
+    wrap.querySelectorAll("[data-toggle]").forEach(function(sw){
+      sw.addEventListener("click", function(e){
+        e.stopPropagation();
+        var id = sw.getAttribute("data-toggle");
+        var cat = state.categories.find(function(c){ return c.id === id; });
+        cat.active = !cat.active;
+        renderCategories(); validateSetup(); save();
+      });
+    });
+    // delete item
+    wrap.querySelectorAll("[data-cat][data-idx]").forEach(function(x){
+      x.addEventListener("click", function(){
+        var id = x.getAttribute("data-cat");
+        var idx = parseInt(x.getAttribute("data-idx"),10);
+        var cat = state.categories.find(function(c){ return c.id === id; });
+        cat.items.splice(idx,1);
+        renderCategories(); validateSetup(); save();
+      });
+    });
+    // add item
+    wrap.querySelectorAll("[data-add-btn]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var id = btn.getAttribute("data-add-btn");
+        var input = wrap.querySelector('[data-add-input="'+id+'"]');
+        var val = input.value.trim();
+        if(!val) return;
+        var cat = state.categories.find(function(c){ return c.id === id; });
+        if(cat.items.indexOf(val) === -1) cat.items.push(val);
+        input.value = "";
+        renderCategories(); validateSetup(); save();
+      });
+    });
+    wrap.querySelectorAll("[data-add-input]").forEach(function(inp){
+      inp.addEventListener("keydown", function(e){
+        if(e.key === "Enter"){
+          e.preventDefault();
+          var id = inp.getAttribute("data-add-input");
+          wrap.querySelector('[data-add-btn="'+id+'"]').click();
+        }
+      });
+    });
+    // delete category
+    wrap.querySelectorAll("[data-del-cat]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var id = btn.getAttribute("data-del-cat");
+        state.categories = state.categories.filter(function(c){ return c.id !== id; });
+        renderCategories(); validateSetup(); save();
+      });
+    });
+  }
+
+  function addCategory(){
+    var name = prompt("اسم القسم الجديد:");
+    if(!name) return;
+    name = name.trim();
+    if(!name) return;
+    var id = "cat_" + Date.now();
+    state.categories.push({ id:id, name:name, active:true, items:[] });
+    state.openCategoryId = id;
+    renderCategories(); validateSetup(); save();
+  }
+
+  // ---------- ROUND SETTINGS ----------
+  function renderSettings(){
+    $("outsider-val").textContent = state.outsiderCount;
+    $("toggle-showcat").classList.toggle("on", state.showCatToOutsider);
+    $("toggle-timer").classList.toggle("on", state.timerEnabled);
+    $("timer-val").textContent = state.timerMinutes;
+    $("timer-minutes-row").style.display = state.timerEnabled ? "flex" : "none";
+  }
+
+  function maxOutsiders(){
+    return Math.max(1, Math.min(4, state.players.length - 2));
+  }
+
+  // ---------- VALIDATION ----------
+  function activeItemPool(){
+    var pool = [];
+    state.categories.forEach(function(cat){
+      if(cat.active){
+        cat.items.forEach(function(item){
+          pool.push({ item:item, categoryName:cat.name });
+        });
+      }
+    });
+    return pool;
+  }
+
+  function validateSetup(){
+    var msg = "";
+    if(state.players.length < 3) msg = "لازم ٣ لاعبين على الأقل";
+    else if(activeItemPool().length < 1) msg = "لازم قسم واحد فعال فيه عنصر واحد على الأقل";
+    else if(state.outsiderCount > maxOutsiders()) {
+      state.outsiderCount = maxOutsiders();
+      renderSettings();
+    }
+    $("setup-warning").textContent = msg;
+    $("start-btn").disabled = !!msg;
+    return !msg;
+  }
+
+  // ---------- START ROUND ----------
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t=a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+
+  function startRound(){
+    if(!validateSetup()) return;
+    var pool = activeItemPool();
+    var pick = pool[Math.floor(Math.random()*pool.length)];
+
+    var idxs = state.players.map(function(_,i){return i;});
+    var shuffledIdxs = shuffle(idxs);
+    var outsiderIdx = new Set(shuffledIdxs.slice(0, state.outsiderCount));
+
+    round = {
+      word: pick.item,
+      categoryName: pick.categoryName,
+      outsiderIdx: outsiderIdx,
+      order: shuffle(idxs) // reveal order
+    };
+    revealPos = 0;
+    revealed = false;
+
+    resetTimer();
+    showScreen("screen-reveal");
+    renderReveal();
+  }
+
+  // ---------- REVEAL SCREEN ----------
+  function renderRevealDots(){
+    var wrap = $("reveal-dots");
+    wrap.innerHTML = "";
+    round.order.forEach(function(_, i){
+      var d = document.createElement("div");
+      d.className = "dot-pip" + (i < revealPos ? " done" : "");
+      wrap.appendChild(d);
+    });
+  }
+
+  function renderReveal(){
+    renderRevealDots();
+    if(revealPos >= round.order.length){
+      showScreen("screen-discuss");
+      return;
+    }
+    var playerIdx = round.order[revealPos];
+    var name = state.players[playerIdx];
+
+    $("pass-name").textContent = name;
+    $("pass-box").style.display = "flex";
+    $("reveal-card").style.display = "none";
+    $("next-player-btn").style.display = "none";
+    revealed = false;
+  }
+
+  function doReveal(){
+    var playerIdx = round.order[revealPos];
+    var isOutsider = round.outsiderIdx.has(playerIdx);
+    var inner = $("reveal-inner");
+    var card = $("reveal-card");
+
+    if(isOutsider){
+      card.className = "reveal-card spy";
+      var catLine = state.showCatToOutsider
+        ? '<div class="cat-name">القسم: '+esc(round.categoryName)+'</div>'
+        : '';
+      inner.innerHTML =
+        '<div class="role-tag spy">أنت برا السالفة 🕵️</div>' +
+        '<div class="spy-msg">حاول تتصرف طبيعي وتكتشف الكلمة من كلام الباقين، بدون ما تفضحون نفسك!</div>' +
+        catLine;
+    } else {
+      card.className = "reveal-card normal";
+      inner.innerHTML =
+        '<div class="role-tag normal">أنت داخل السالفة ✅</div>' +
+        '<div class="secret-word">'+esc(round.word)+'</div>' +
+        '<div class="cat-name">القسم: '+esc(round.categoryName)+'</div>';
+    }
+
+    $("pass-box").style.display = "none";
+    card.style.display = "block";
+    $("next-player-btn").style.display = "block";
+    revealed = true;
+  }
+
+  function nextPlayer(){
+    revealPos++;
+    renderReveal();
+  }
+
+  // ---------- TIMER ----------
+  function resetTimer(){
+    stopTimer();
+    timerSeconds = state.timerMinutes * 60;
+    updateTimerDisplay();
+    $("timer-toggle-btn").textContent = "ابدأ ⏱️";
+  }
+  function updateTimerDisplay(){
+    var m = Math.floor(timerSeconds/60);
+    var s = timerSeconds%60;
+    var el = $("timer-display");
+    el.textContent = (m<10?"0":"")+m + ":" + (s<10?"0":"")+s;
+    el.classList.toggle("low", timerSeconds <= 30);
+  }
+  function stopTimer(){
+    timerRunning = false;
+    if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+  }
+  function toggleTimer(){
+    if(timerRunning){
+      stopTimer();
+      $("timer-toggle-btn").textContent = "استئناف ▶️";
+    } else {
+      timerRunning = true;
+      $("timer-toggle-btn").textContent = "إيقاف ⏸️";
+      timerInterval = setInterval(function(){
+        timerSeconds--;
+        if(timerSeconds <= 0){
+          timerSeconds = 0;
+          updateTimerDisplay();
+          stopTimer();
+          $("timer-toggle-btn").textContent = "خلص الوقت ⏰";
+          return;
+        }
+        updateTimerDisplay();
+      }, 1000);
+    }
+  }
+
+  // ---------- RESULT ----------
+  function showResult(){
+    stopTimer();
+    $("result-cat").textContent = "القسم: " + round.categoryName;
+    $("result-word").textContent = round.word;
+    var wrap = $("result-outsiders");
+    wrap.innerHTML = "";
+    Array.from(round.outsiderIdx).forEach(function(idx){
+      var chip = document.createElement("div");
+      chip.className = "outsider-chip";
+      chip.textContent = state.players[idx];
+      wrap.appendChild(chip);
+    });
+    showScreen("screen-result");
+  }
+
+  // ---------- EVENTS ----------
+  $("add-player-btn").addEventListener("click", addPlayer);
+  $("player-input").addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ e.preventDefault(); addPlayer(); }
+  });
+  $("add-category-btn").addEventListener("click", addCategory);
+
+  $("outsider-minus").addEventListener("click", function(){
+    if(state.outsiderCount > 1){ state.outsiderCount--; renderSettings(); save(); }
+  });
+  $("outsider-plus").addEventListener("click", function(){
+    if(state.outsiderCount < maxOutsiders()){ state.outsiderCount++; renderSettings(); save(); }
+  });
+  $("toggle-showcat").addEventListener("click", function(){
+    state.showCatToOutsider = !state.showCatToOutsider;
+    renderSettings(); save();
+  });
+  $("toggle-timer").addEventListener("click", function(){
+    state.timerEnabled = !state.timerEnabled;
+    renderSettings(); save();
+  });
+  $("timer-minus").addEventListener("click", function(){
+    if(state.timerMinutes > 1){ state.timerMinutes--; renderSettings(); save(); }
+  });
+  $("timer-plus").addEventListener("click", function(){
+    if(state.timerMinutes < 15){ state.timerMinutes++; renderSettings(); save(); }
+  });
+
+  $("start-btn").addEventListener("click", startRound);
+  $("reveal-btn").addEventListener("click", doReveal);
+  $("next-player-btn").addEventListener("click", nextPlayer);
+
+  $("timer-toggle-btn").addEventListener("click", toggleTimer);
+  $("timer-reset-btn").addEventListener("click", resetTimer);
+  $("show-result-btn").addEventListener("click", showResult);
+
+  $("new-round-btn").addEventListener("click", startRound);
+  $("back-setup-btn").addEventListener("click", function(){
+    showScreen("screen-setup");
+  });
+
+  // ---------- INIT ----------
+  load();
+  renderPlayers();
+  renderCategories();
+  renderSettings();
+  validateSetup();
+  resetTimer();
+  $("timer-card").style.display = "block";
+
+  // hide timer card if disabled, still allow direct "show result"
+  (function watchTimerVisibility(){
+    var origRenderSettings = renderSettings;
+    renderSettings = function(){
+      origRenderSettings();
+      $("timer-card").style.display = state.timerEnabled ? "block" : "none";
+    };
+  })();
+  renderSettings();
+
+})();
+</script>
+</body>
+</html>
