@@ -92,7 +92,7 @@
     border-radius:14px;
   }
   .btn-primary:disabled{opacity:.4;}
-  .btn-secondary{background:var(--card2);color:var(--text);border:1px solid rgba(255,255,255,.15);}
+  .btn-secondary{background:var(--card2);color:var(--text);border:1px solid rgba(255,255,255,.15);width:100%;}
   .btn-ghost{background:transparent;color:var(--muted);text-decoration:underline;padding:6px;font-size:13px;}
   .btn-danger{background:var(--red);color:#3a0000;}
 
@@ -150,6 +150,7 @@
   .settings-row{
     display:flex;align-items:center;justify-content:space-between;
     padding:10px 2px;
+    gap:10px;
   }
   .settings-row .lbl{font-size:14px;}
   .settings-row .lbl small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;}
@@ -162,7 +163,7 @@
 
   .warn{color:var(--accent2);font-size:13px;text-align:center;min-height:18px;}
 
-  /* reveal screen */
+  /* pass / reveal shared */
   .pass-box{
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
     text-align:center;gap:22px;
@@ -210,6 +211,26 @@
   }
   .timer-display.low{color:var(--red);}
 
+  /* option chips for voting / guessing */
+  .option-chip{
+    background:var(--card2);
+    border:2px solid rgba(255,255,255,.12);
+    border-radius:14px;
+    padding:12px 16px;
+    cursor:pointer;
+    font-size:15px;
+    text-align:center;
+    flex:1 1 auto;
+  }
+  .option-chip.selected{
+    border-color:var(--accent2);
+    background:rgba(255,217,61,.14);
+    color:var(--accent2);
+    font-weight:bold;
+  }
+  .options-col{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+  .options-wrap{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;}
+
   /* result */
   .result-hero{
     text-align:center;padding:10px 0 4px;
@@ -221,11 +242,14 @@
     border:1px solid rgba(255,92,92,.4);
     border-radius:999px;padding:7px 16px;font-weight:bold;font-size:14px;
   }
-
-  footer.nav{
-    display:flex;gap:10px;margin-top:6px;
+  .points-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:9px 2px;border-bottom:1px solid rgba(255,255,255,.06);
+    font-size:14px;
   }
-  .grow{flex:1;}
+  .points-row:last-child{border-bottom:none;}
+  .points-plus{color:var(--green);font-weight:bold;}
+
   .small-note{font-size:12px;color:var(--muted);text-align:center;}
 </style>
 </head>
@@ -236,6 +260,12 @@
 
   <!-- ============ SETUP SCREEN ============ -->
   <div class="screen active" id="screen-setup">
+
+    <div class="card" id="scoreboard-setup-card" style="display:none">
+      <h2>🏆 الترتيب الحالي</h2>
+      <div id="scoreboard-setup-list"></div>
+      <button class="btn-ghost" id="reset-scores-setup-btn">تصفير كل النقاط</button>
+    </div>
 
     <div class="card" id="players-card">
       <h2>👥 اللاعبين <span class="count" id="players-count">(0/20)</span></h2>
@@ -278,11 +308,12 @@
           <button id="timer-plus">+</button>
         </div>
       </div>
+      <div class="small-note" style="margin-top:8px">بعد النقاش، كل لاعب يصوّت مين برا السالفة (+١٠ نقاط للي يعرف)، وبعدها اللي برا السالفة يخمّن الكلمة (+١٠ نقاط لو صح). أول وحد يوصل ١٠٠ نقطة يفوز 🏆</div>
     </div>
 
     <div class="warn" id="setup-warning"></div>
     <button class="btn-primary" id="start-btn">ابدأ الجولة 🎬</button>
-    <div class="small-note">مرروا نفس الجهاز بين اللاعبين وقت الكشف</div>
+    <div class="small-note">مرروا نفس الجهاز بين اللاعبين وقت الكشف والتصويت</div>
   </div>
 
   <!-- ============ REVEAL SCREEN ============ -->
@@ -316,19 +347,75 @@
         <button class="btn-secondary grow" id="timer-reset-btn">إعادة تعيين</button>
       </div>
     </div>
-    <button class="btn-primary" id="show-result-btn">اكشفوا النتيجة الآن 🔎</button>
+    <button class="btn-primary" id="show-result-btn">ابدأوا التصويت 🗳️</button>
+  </div>
+
+  <!-- ============ VOTE SCREEN (who is the outsider) ============ -->
+  <div class="screen" id="screen-vote">
+    <div class="progress-dots" id="vote-dots"></div>
+    <div class="pass-box" id="vote-pass-box">
+      <div class="avatar-circle">🗳️</div>
+      <div>
+        <div class="hint">مرر الجهاز إلى</div>
+        <div class="player-name-big" id="vote-pass-name"></div>
+      </div>
+      <button class="btn-primary" id="vote-ready-btn" style="max-width:260px">جاهز، أصوّت</button>
+    </div>
+    <div class="card" id="vote-card" style="display:none">
+      <h2 style="justify-content:center">🕵️ مين برأيك برا السالفة؟</h2>
+      <div class="options-wrap" id="vote-options"></div>
+      <button class="btn-primary" id="vote-confirm-btn" style="margin-top:14px" disabled>تأكيد الاختيار</button>
+    </div>
+  </div>
+
+  <!-- ============ ANNOUNCE OUTSIDER SCREEN ============ -->
+  <div class="screen" id="screen-announce">
+    <div class="card result-hero">
+      <div class="emoji">🕵️‍♂️</div>
+      <div class="hint">اللي كان برا السالفة</div>
+      <div class="outsider-list" id="announce-outsiders"></div>
+      <div class="hint" style="margin-top:12px" id="vote-summary"></div>
+    </div>
+    <button class="btn-primary" id="continue-to-guess-btn">التالي: يخمّن الكلمة 🎯</button>
+  </div>
+
+  <!-- ============ OUTSIDER GUESS SCREEN ============ -->
+  <div class="screen" id="screen-guess">
+    <div class="progress-dots" id="guess-dots"></div>
+    <div class="pass-box" id="guess-pass-box">
+      <div class="avatar-circle">🎯</div>
+      <div>
+        <div class="hint">مرر الجهاز إلى</div>
+        <div class="player-name-big" id="guess-pass-name"></div>
+      </div>
+      <button class="btn-primary" id="guess-ready-btn" style="max-width:260px">جاهز، أخمّن الكلمة</button>
+    </div>
+    <div class="card" id="guess-card" style="display:none">
+      <h2 style="justify-content:center">🎯 وش كانت الكلمة؟</h2>
+      <div class="options-col" id="guess-options"></div>
+      <button class="btn-primary" id="guess-confirm-btn" style="margin-top:14px" disabled>تأكيد</button>
+    </div>
   </div>
 
   <!-- ============ RESULT SCREEN ============ -->
   <div class="screen" id="screen-result">
     <div class="card result-hero">
-      <div class="emoji">🎉</div>
-      <div class="cat-name" id="result-cat"></div>
+      <div class="emoji" id="result-emoji">🎉</div>
+      <div id="result-title" style="font-size:19px;font-weight:bold;margin-top:6px"></div>
+      <div class="cat-name" id="result-cat" style="margin-top:8px"></div>
       <div class="secret-word" id="result-word"></div>
-      <div class="hint" style="margin-top:6px">اللي كانوا برا السالفة</div>
       <div class="outsider-list" id="result-outsiders"></div>
     </div>
-    <button class="btn-primary" id="new-round-btn">جولة جديدة بنفس اللاعبين 🔁</button>
+    <div class="card">
+      <h2>⭐ نقاط هذي الجولة</h2>
+      <div id="round-points-list"></div>
+    </div>
+    <div class="card">
+      <h2>🏆 الترتيب العام (من ١٠٠)</h2>
+      <div id="scoreboard-list"></div>
+    </div>
+    <button class="btn-primary" id="new-round-btn">جولة جديدة 🔁</button>
+    <button class="btn-secondary" id="reset-scores-btn">تصفير النقاط وبدء لعبة جديدة</button>
     <button class="btn-secondary" id="back-setup-btn">تعديل اللاعبين / الأقسام</button>
   </div>
 
@@ -338,7 +425,10 @@
 (function(){
   "use strict";
 
-  var STORAGE_KEY = "barra_alsalfa_state_v1";
+  var STORAGE_KEY = "barra_alsalfa_state_v2";
+  var SUSPECT_POINTS = 10;
+  var GUESS_POINTS = 10;
+  var WIN_TARGET = 100;
 
   var DEFAULT_CATEGORIES = [
     { id:"chars", name:"شخصيات عامة", active:true, items:[
@@ -360,21 +450,23 @@
     ]}
   ];
 
-  var DEFAULT_PLAYERS = [];
-
   var state = {
-    players: DEFAULT_PLAYERS.slice(),
+    players: [],
     categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
     outsiderCount: 1,
     showCatToOutsider: true,
     timerEnabled: true,
     timerMinutes: 3,
-    openCategoryId: null
+    openCategoryId: null,
+    scores: {}
   };
 
-  var round = null;      // { word, categoryName, outsiderIdx: Set, order: [] }
+  var round = null;
   var revealPos = 0;
-  var revealed = false;
+  var votePos = 0;
+  var guessPos = 0;
+  var currentVoteSelection = new Set();
+  var currentGuessSelection = null;
   var timerInterval = null;
   var timerSeconds = 0;
   var timerRunning = false;
@@ -387,7 +479,8 @@
         outsiderCount: state.outsiderCount,
         showCatToOutsider: state.showCatToOutsider,
         timerEnabled: state.timerEnabled,
-        timerMinutes: state.timerMinutes
+        timerMinutes: state.timerMinutes,
+        scores: state.scores
       }));
     }catch(e){}
   }
@@ -403,6 +496,7 @@
       if(typeof saved.showCatToOutsider === "boolean") state.showCatToOutsider = saved.showCatToOutsider;
       if(typeof saved.timerEnabled === "boolean") state.timerEnabled = saved.timerEnabled;
       if(typeof saved.timerMinutes === "number") state.timerMinutes = saved.timerMinutes;
+      if(saved.scores && typeof saved.scores === "object") state.scores = saved.scores;
     }catch(e){}
   }
 
@@ -411,11 +505,30 @@
     document.querySelectorAll(".screen").forEach(function(s){ s.classList.remove("active"); });
     $(id).classList.add("active");
   }
-
   function esc(str){
     var d = document.createElement("div");
     d.textContent = str;
     return d.innerHTML;
+  }
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t=a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+  function getScore(name){ return state.scores[name] || 0; }
+  function addScore(name, pts){ state.scores[name] = getScore(name) + pts; }
+
+  function renderDotsInto(id, total, doneCount){
+    var wrap = $(id);
+    wrap.innerHTML = "";
+    for(var i=0;i<total;i++){
+      var d = document.createElement("div");
+      d.className = "dot-pip" + (i < doneCount ? " done" : "");
+      wrap.appendChild(d);
+    }
   }
 
   // ---------- PLAYERS ----------
@@ -432,7 +545,7 @@
     wrap.querySelectorAll(".x").forEach(function(x){
       x.addEventListener("click", function(){
         state.players.splice(parseInt(x.getAttribute("data-i"),10), 1);
-        renderPlayers(); validateSetup(); save();
+        renderPlayers(); validateSetup(); renderScoreboardSetup(); save();
       });
     });
     $("add-player-btn").disabled = state.players.length >= 20;
@@ -446,15 +559,35 @@
     if(state.players.indexOf(name) !== -1){ input.value=""; return; }
     state.players.push(name);
     input.value = "";
-    renderPlayers(); validateSetup(); save();
+    renderPlayers(); validateSetup(); renderScoreboardSetup(); save();
     input.focus();
+  }
+
+  // ---------- SCOREBOARD (setup screen) ----------
+  function renderScoreboardSetup(){
+    var relevant = state.players.filter(function(n){ return getScore(n) > 0; });
+    if(relevant.length === 0){
+      $("scoreboard-setup-card").style.display = "none";
+      return;
+    }
+    $("scoreboard-setup-card").style.display = "block";
+    var sorted = state.players.slice().sort(function(a,b){ return getScore(b)-getScore(a); });
+    var wrap = $("scoreboard-setup-list");
+    wrap.innerHTML = "";
+    sorted.forEach(function(name, i){
+      var medal = i===0 ? "🥇" : i===1 ? "🥈" : i===2 ? "🥉" : (i+1)+".";
+      var row = document.createElement("div");
+      row.className = "points-row";
+      row.innerHTML = '<div>'+medal+' '+esc(name)+'</div><div style="font-weight:bold">'+getScore(name)+' / 100</div>';
+      wrap.appendChild(row);
+    });
   }
 
   // ---------- CATEGORIES ----------
   function renderCategories(){
     var wrap = $("categories-list");
     wrap.innerHTML = "";
-    state.categories.forEach(function(cat, ci){
+    state.categories.forEach(function(cat){
       var block = document.createElement("div");
       var isOpen = state.openCategoryId === cat.id;
       block.className = "cat-sep";
@@ -488,7 +621,6 @@
       });
     });
 
-    // header click -> toggle open
     wrap.querySelectorAll(".cat-header").forEach(function(h){
       h.addEventListener("click", function(){
         var id = h.getAttribute("data-id");
@@ -496,7 +628,6 @@
         renderCategories();
       });
     });
-    // active switch
     wrap.querySelectorAll("[data-toggle]").forEach(function(sw){
       sw.addEventListener("click", function(e){
         e.stopPropagation();
@@ -506,7 +637,6 @@
         renderCategories(); validateSetup(); save();
       });
     });
-    // delete item
     wrap.querySelectorAll("[data-cat][data-idx]").forEach(function(x){
       x.addEventListener("click", function(){
         var id = x.getAttribute("data-cat");
@@ -516,7 +646,6 @@
         renderCategories(); validateSetup(); save();
       });
     });
-    // add item
     wrap.querySelectorAll("[data-add-btn]").forEach(function(btn){
       btn.addEventListener("click", function(){
         var id = btn.getAttribute("data-add-btn");
@@ -538,7 +667,6 @@
         }
       });
     });
-    // delete category
     wrap.querySelectorAll("[data-del-cat]").forEach(function(btn){
       btn.addEventListener("click", function(){
         var id = btn.getAttribute("data-del-cat");
@@ -566,6 +694,7 @@
     $("toggle-timer").classList.toggle("on", state.timerEnabled);
     $("timer-val").textContent = state.timerMinutes;
     $("timer-minutes-row").style.display = state.timerEnabled ? "flex" : "none";
+    $("timer-card").style.display = state.timerEnabled ? "block" : "none";
   }
 
   function maxOutsiders(){
@@ -598,33 +727,45 @@
     return !msg;
   }
 
-  // ---------- START ROUND ----------
-  function shuffle(arr){
-    var a = arr.slice();
-    for(var i=a.length-1;i>0;i--){
-      var j = Math.floor(Math.random()*(i+1));
-      var t=a[i]; a[i]=a[j]; a[j]=t;
-    }
-    return a;
+  function buildWordOptions(word){
+    var pool = [];
+    state.categories.forEach(function(cat){
+      if(cat.active){
+        cat.items.forEach(function(item){
+          if(item !== word) pool.push(item);
+        });
+      }
+    });
+    pool = Array.from(new Set(pool));
+    var distractors = shuffle(pool).slice(0, 3);
+    return shuffle([word].concat(distractors));
   }
 
+  // ---------- START ROUND ----------
   function startRound(){
     if(!validateSetup()) return;
     var pool = activeItemPool();
     var pick = pool[Math.floor(Math.random()*pool.length)];
 
     var idxs = state.players.map(function(_,i){return i;});
-    var shuffledIdxs = shuffle(idxs);
-    var outsiderIdx = new Set(shuffledIdxs.slice(0, state.outsiderCount));
+    var shuffledForOutsiders = shuffle(idxs);
+    var outsiderIdx = new Set(shuffledForOutsiders.slice(0, state.outsiderCount));
+    var nonOutsiderIdx = idxs.filter(function(i){ return !outsiderIdx.has(i); });
 
     round = {
       word: pick.item,
       categoryName: pick.categoryName,
       outsiderIdx: outsiderIdx,
-      order: shuffle(idxs) // reveal order
+      order: shuffle(idxs),
+      voteOrder: shuffle(nonOutsiderIdx),
+      guessOrder: shuffle(Array.from(outsiderIdx)),
+      wordOptions: buildWordOptions(pick.item),
+      correctVoters: [],
+      correctGuessers: []
     };
     revealPos = 0;
-    revealed = false;
+    votePos = 0;
+    guessPos = 0;
 
     resetTimer();
     showScreen("screen-reveal");
@@ -632,30 +773,17 @@
   }
 
   // ---------- REVEAL SCREEN ----------
-  function renderRevealDots(){
-    var wrap = $("reveal-dots");
-    wrap.innerHTML = "";
-    round.order.forEach(function(_, i){
-      var d = document.createElement("div");
-      d.className = "dot-pip" + (i < revealPos ? " done" : "");
-      wrap.appendChild(d);
-    });
-  }
-
   function renderReveal(){
-    renderRevealDots();
+    renderDotsInto("reveal-dots", round.order.length, revealPos);
     if(revealPos >= round.order.length){
       showScreen("screen-discuss");
       return;
     }
     var playerIdx = round.order[revealPos];
-    var name = state.players[playerIdx];
-
-    $("pass-name").textContent = name;
+    $("pass-name").textContent = state.players[playerIdx];
     $("pass-box").style.display = "flex";
     $("reveal-card").style.display = "none";
     $("next-player-btn").style.display = "none";
-    revealed = false;
   }
 
   function doReveal(){
@@ -684,7 +812,6 @@
     $("pass-box").style.display = "none";
     card.style.display = "block";
     $("next-player-btn").style.display = "block";
-    revealed = true;
   }
 
   function nextPlayer(){
@@ -731,12 +858,72 @@
     }
   }
 
-  // ---------- RESULT ----------
-  function showResult(){
-    stopTimer();
-    $("result-cat").textContent = "القسم: " + round.categoryName;
-    $("result-word").textContent = round.word;
-    var wrap = $("result-outsiders");
+  // ---------- VOTE PHASE (who is outsider) ----------
+  function renderVote(){
+    renderDotsInto("vote-dots", round.voteOrder.length, votePos);
+    if(votePos >= round.voteOrder.length){
+      showScreen("screen-announce");
+      renderAnnounce();
+      return;
+    }
+    var playerIdx = round.voteOrder[votePos];
+    $("vote-pass-name").textContent = state.players[playerIdx];
+    $("vote-pass-box").style.display = "flex";
+    $("vote-card").style.display = "none";
+  }
+
+  function startVoteCard(){
+    currentVoteSelection = new Set();
+    var playerIdx = round.voteOrder[votePos];
+    var wrap = $("vote-options");
+    wrap.innerHTML = "";
+    state.players.forEach(function(name, idx){
+      if(idx === playerIdx) return;
+      var el = document.createElement("div");
+      el.className = "option-chip";
+      el.textContent = name;
+      el.dataset.idx = idx;
+      el.addEventListener("click", function(){
+        var allowMulti = state.outsiderCount > 1;
+        if(allowMulti){
+          if(currentVoteSelection.has(idx)) currentVoteSelection.delete(idx);
+          else currentVoteSelection.add(idx);
+        } else {
+          currentVoteSelection = new Set([idx]);
+        }
+        updateVoteUI();
+      });
+      wrap.appendChild(el);
+    });
+    updateVoteUI();
+    $("vote-pass-box").style.display = "none";
+    $("vote-card").style.display = "block";
+  }
+
+  function updateVoteUI(){
+    $("vote-options").querySelectorAll(".option-chip").forEach(function(el){
+      var idx = parseInt(el.dataset.idx, 10);
+      el.classList.toggle("selected", currentVoteSelection.has(idx));
+    });
+    $("vote-confirm-btn").disabled = currentVoteSelection.size === 0;
+  }
+
+  function confirmVote(){
+    var playerIdx = round.voteOrder[votePos];
+    var correct = currentVoteSelection.size === round.outsiderIdx.size &&
+      Array.from(currentVoteSelection).every(function(i){ return round.outsiderIdx.has(i); });
+    if(correct){
+      addScore(state.players[playerIdx], SUSPECT_POINTS);
+      round.correctVoters.push(state.players[playerIdx]);
+      save();
+    }
+    votePos++;
+    renderVote();
+  }
+
+  // ---------- ANNOUNCE OUTSIDER ----------
+  function renderAnnounce(){
+    var wrap = $("announce-outsiders");
     wrap.innerHTML = "";
     Array.from(round.outsiderIdx).forEach(function(idx){
       var chip = document.createElement("div");
@@ -744,6 +931,116 @@
       chip.textContent = state.players[idx];
       wrap.appendChild(chip);
     });
+    $("vote-summary").textContent = round.correctVoters.length
+      ? "عرفوه: " + round.correctVoters.join("، ") + " (+١٠ نقاط لكل وحد)"
+      : "محد عرف مين هو برا السالفة! 😅";
+  }
+
+  // ---------- OUTSIDER GUESS PHASE ----------
+  function renderGuess(){
+    renderDotsInto("guess-dots", round.guessOrder.length, guessPos);
+    if(guessPos >= round.guessOrder.length){
+      showResult();
+      return;
+    }
+    var playerIdx = round.guessOrder[guessPos];
+    $("guess-pass-name").textContent = state.players[playerIdx];
+    $("guess-pass-box").style.display = "flex";
+    $("guess-card").style.display = "none";
+  }
+
+  function startGuessCard(){
+    currentGuessSelection = null;
+    var wrap = $("guess-options");
+    wrap.innerHTML = "";
+    round.wordOptions.forEach(function(opt){
+      var el = document.createElement("div");
+      el.className = "option-chip";
+      el.textContent = opt;
+      el.addEventListener("click", function(){
+        currentGuessSelection = opt;
+        wrap.querySelectorAll(".option-chip").forEach(function(o){ o.classList.remove("selected"); });
+        el.classList.add("selected");
+        $("guess-confirm-btn").disabled = false;
+      });
+      wrap.appendChild(el);
+    });
+    $("guess-confirm-btn").disabled = true;
+    $("guess-pass-box").style.display = "none";
+    $("guess-card").style.display = "block";
+  }
+
+  function confirmGuess(){
+    var playerIdx = round.guessOrder[guessPos];
+    if(currentGuessSelection === round.word){
+      addScore(state.players[playerIdx], GUESS_POINTS);
+      round.correctGuessers.push(state.players[playerIdx]);
+      save();
+    }
+    guessPos++;
+    renderGuess();
+  }
+
+  // ---------- RESULT ----------
+  function showResult(){
+    stopTimer();
+    $("result-cat").textContent = "القسم: " + round.categoryName;
+    $("result-word").textContent = round.word;
+
+    var outWrap = $("result-outsiders");
+    outWrap.innerHTML = "";
+    Array.from(round.outsiderIdx).forEach(function(idx){
+      var chip = document.createElement("div");
+      chip.className = "outsider-chip";
+      chip.textContent = state.players[idx];
+      outWrap.appendChild(chip);
+    });
+
+    var winners = state.players.filter(function(name){ return getScore(name) >= WIN_TARGET; });
+    if(winners.length){
+      winners.sort(function(a,b){ return getScore(b) - getScore(a); });
+      $("result-emoji").textContent = "🏆";
+      $("result-title").textContent = "انتهت اللعبة! فاز " + winners[0] + " بـ" + getScore(winners[0]) + " نقطة";
+      $("new-round-btn").style.display = "none";
+    } else {
+      $("result-emoji").textContent = "🎉";
+      $("result-title").textContent = "نتيجة الجولة";
+      $("new-round-btn").style.display = "block";
+    }
+
+    var pointsWrap = $("round-points-list");
+    pointsWrap.innerHTML = "";
+    var any = false;
+    round.correctVoters.forEach(function(name){
+      any = true;
+      var row = document.createElement("div");
+      row.className = "points-row";
+      row.innerHTML = '<div>'+esc(name)+' عرف اللي برا السالفة</div><div class="points-plus">+١٠</div>';
+      pointsWrap.appendChild(row);
+    });
+    round.correctGuessers.forEach(function(name){
+      any = true;
+      var row = document.createElement("div");
+      row.className = "points-row";
+      row.innerHTML = '<div>'+esc(name)+' خمّن الكلمة صح</div><div class="points-plus">+١٠</div>';
+      pointsWrap.appendChild(row);
+    });
+    if(!any){
+      pointsWrap.innerHTML = '<div class="hint" style="text-align:center">محد سجل نقاط هذي الجولة</div>';
+    }
+
+    var board = $("scoreboard-list");
+    board.innerHTML = "";
+    var sorted = state.players.slice().sort(function(a,b){ return getScore(b) - getScore(a); });
+    sorted.forEach(function(name, i){
+      var medal = i===0 ? "🥇" : i===1 ? "🥈" : i===2 ? "🥉" : (i+1)+".";
+      var row = document.createElement("div");
+      row.className = "points-row";
+      row.innerHTML = '<div>'+medal+' '+esc(name)+'</div><div style="font-weight:bold">'+getScore(name)+' / 100</div>';
+      board.appendChild(row);
+    });
+
+    save();
     showScreen("screen-result");
   }
 
@@ -774,6 +1071,10 @@
   $("timer-plus").addEventListener("click", function(){
     if(state.timerMinutes < 15){ state.timerMinutes++; renderSettings(); save(); }
   });
+  $("reset-scores-setup-btn").addEventListener("click", function(){
+    state.scores = {};
+    renderScoreboardSetup(); save();
+  });
 
   $("start-btn").addEventListener("click", startRound);
   $("reveal-btn").addEventListener("click", doReveal);
@@ -781,10 +1082,32 @@
 
   $("timer-toggle-btn").addEventListener("click", toggleTimer);
   $("timer-reset-btn").addEventListener("click", resetTimer);
-  $("show-result-btn").addEventListener("click", showResult);
+  $("show-result-btn").addEventListener("click", function(){
+    showScreen("screen-vote");
+    votePos = 0;
+    renderVote();
+  });
+
+  $("vote-ready-btn").addEventListener("click", startVoteCard);
+  $("vote-confirm-btn").addEventListener("click", confirmVote);
+
+  $("continue-to-guess-btn").addEventListener("click", function(){
+    showScreen("screen-guess");
+    guessPos = 0;
+    renderGuess();
+  });
+
+  $("guess-ready-btn").addEventListener("click", startGuessCard);
+  $("guess-confirm-btn").addEventListener("click", confirmGuess);
 
   $("new-round-btn").addEventListener("click", startRound);
+  $("reset-scores-btn").addEventListener("click", function(){
+    state.scores = {};
+    save();
+    startRound();
+  });
   $("back-setup-btn").addEventListener("click", function(){
+    renderScoreboardSetup();
     showScreen("screen-setup");
   });
 
@@ -793,19 +1116,9 @@
   renderPlayers();
   renderCategories();
   renderSettings();
+  renderScoreboardSetup();
   validateSetup();
   resetTimer();
-  $("timer-card").style.display = "block";
-
-  // hide timer card if disabled, still allow direct "show result"
-  (function watchTimerVisibility(){
-    var origRenderSettings = renderSettings;
-    renderSettings = function(){
-      origRenderSettings();
-      $("timer-card").style.display = state.timerEnabled ? "block" : "none";
-    };
-  })();
-  renderSettings();
 
 })();
 </script>
